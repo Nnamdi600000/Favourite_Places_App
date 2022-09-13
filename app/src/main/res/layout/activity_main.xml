@@ -16,7 +16,7 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:visibility="gone"
-            tools:listitem=""
+            tools:listitem="@layout/item_list_favourite_places"
             tools:visibility="visible" />
     </ScrollView>
 
@@ -29,7 +29,7 @@
         android:text="No place is available!!"
         android:textColor="@color/grey"
         android:textSize="18sp"
-        android:visibility="visible"/>
+        android:visibility="visible" />
 
     <com.google.android.material.floatingactionbutton.FloatingActionButton
         android:id="@+id/floating_button_id"
