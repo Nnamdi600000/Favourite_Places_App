@@ -15,8 +15,8 @@ interface FavouritePlaceDao {
     suspend fun delete(favouritePlaceEntity: FavouritePlaceEntity)
 
     @Query("SELECT * FROM  `favouritePlaces-table`")
-    fun fetchAllStudent(): Flow<List<FavouritePlaceEntity>>
+    fun fetchAllFavouritePlaces(): Flow<List<FavouritePlaceEntity>>
 
     @Query("SELECT * FROM  `favouritePlaces-table` where id=:id")
-    fun fetchStudentById(id: Int): Flow<FavouritePlaceEntity>
+    fun fetchFavouritePlacesById(id: Int): Flow<FavouritePlaceEntity>
 }

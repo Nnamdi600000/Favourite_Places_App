@@ -1,8 +1,11 @@
 package com.codennamdi.favouriteplacesapp.database
 
+import android.os.Parcel
+import android.os.Parcelable
 import androidx.room.ColumnInfo
 import androidx.room.Entity
 import androidx.room.PrimaryKey
+import java.io.Serializable
 
 @Entity(tableName = "favouritePlaces-table")
 data class FavouritePlaceEntity(
@@ -22,4 +25,4 @@ data class FavouritePlaceEntity(
     val longitude: Double,
     @ColumnInfo(name = "latitude")
     val latitude: Double
-)
+) : Serializable

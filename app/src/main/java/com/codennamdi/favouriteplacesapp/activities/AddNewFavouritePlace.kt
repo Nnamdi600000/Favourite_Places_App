@@ -1,8 +1,10 @@
 package com.codennamdi.favouriteplacesapp.activities
 
 import android.Manifest
+import android.app.Activity
 import android.app.DatePickerDialog
 import android.content.ActivityNotFoundException
+import android.content.ContentValues.TAG
 import android.content.Context
 import android.content.ContextWrapper
 import android.content.Intent
@@ -20,10 +22,16 @@ import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
 import androidx.lifecycle.lifecycleScope
+import com.codennamdi.favouriteplacesapp.R
 import com.codennamdi.favouriteplacesapp.database.FavouritePlaceApp
 import com.codennamdi.favouriteplacesapp.database.FavouritePlaceDao
 import com.codennamdi.favouriteplacesapp.database.FavouritePlaceEntity
 import com.codennamdi.favouriteplacesapp.databinding.ActivityAddNewFavouritePlaceBinding
+import com.google.android.libraries.places.api.Places
+import com.google.android.libraries.places.api.model.Place
+import com.google.android.libraries.places.widget.Autocomplete
+import com.google.android.libraries.places.widget.AutocompleteActivity
+import com.google.android.libraries.places.widget.model.AutocompleteActivityMode
 import com.karumi.dexter.Dexter
 import com.karumi.dexter.MultiplePermissionsReport
 import com.karumi.dexter.PermissionToken
@@ -44,6 +52,7 @@ class AddNewFavouritePlace : AppCompatActivity() {
     private lateinit var saveImageToInternalStorage: Uri
     private var mLongitude: Double = 0.0
     private var mLatitude: Double = 0.0
+    private var favouritePlacesDetails: FavouritePlaceEntity? = null
 
     private val openGalleryLauncher: ActivityResultLauncher<Intent> =
         registerForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
@@ -64,8 +73,44 @@ class AddNewFavouritePlace : AppCompatActivity() {
             Log.e("Saved image", "$saveImageToInternalStorage")
         }
 
+    private var placeAutoCompleteResultLauncher: ActivityResultLauncher<Intent> =
+        registerForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
+//            if (result.resultCode == PLACE_AUTO_COMPLETE_REQUEST_CODE) {
+//                val place: Place = Autocomplete.getPlaceFromIntent(result.data!!)
+//                binding.textFieldLocation.setText(place.address)
+//                mLatitude = place.latLng!!.latitude
+//                mLongitude = place.latLng!!.longitude
+//            }
+
+            when (result.resultCode) {
+                Activity.RESULT_OK -> {
+                    result.data?.let {
+                        val place: Place = Autocomplete.getPlaceFromIntent(result.data!!)
+                        binding.textFieldLocation.setText(place.address)
+                        mLatitude = place.latLng!!.latitude
+                        mLongitude = place.latLng!!.longitude
+                    }
+                }
+                AutocompleteActivity.RESULT_ERROR -> {
+                    // TODO: Handle the error.
+                    result.data?.let {
+                        val status = Autocomplete.getStatusFromIntent(result.data!!)
+                        Log.i(TAG, status.statusMessage ?: "")
+                    }
+                }
+                Activity.RESULT_CANCELED -> {
+                    Toast.makeText(
+                        this@AddNewFavouritePlace,
+                        "The user cancelled the search",
+                        Toast.LENGTH_LONG
+                    ).show()
+                }
+            }
+        }
+
     companion object {
         private const val IMAGE_DIRECTORY = "FavouritePlacesImages"
+        private const val PLACE_AUTO_COMPLETE_REQUEST_CODE = 3
     }
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -78,8 +123,33 @@ class AddNewFavouritePlace : AppCompatActivity() {
         if (supportActionBar != null) {
             supportActionBar?.setDisplayHomeAsUpEnabled(true)
         }
+
+        if (intent.hasExtra(MainActivity.EXTRA_FAVOURITE_PLACE_DETAILS)) {
+            favouritePlacesDetails =
+                intent.getSerializableExtra(MainActivity.EXTRA_FAVOURITE_PLACE_DETAILS) as FavouritePlaceEntity
+            setUpdateDetailsValue()
+        }
+
+        if (!Places.isInitialized()) {
+            Places.initialize(this@AddNewFavouritePlace, getString(R.string.places_api_key))
+        }
+
         setOnClickListeners()
         formatDate()
+    }
+
+    private fun setUpdateDetailsValue() {
+        supportActionBar?.title = "Edit Favourite Place Details"
+        binding.textFieldTitle.setText(favouritePlacesDetails?.title)
+        binding.textFieldDescription.setText(favouritePlacesDetails?.description)
+        binding.textFieldDate.setText(favouritePlacesDetails?.date)
+        binding.textFieldLocation.setText(favouritePlacesDetails?.location)
+
+        //To display the image
+        saveImageToInternalStorage = Uri.parse(favouritePlacesDetails?.image)
+        binding.placeImage.setImageURI(saveImageToInternalStorage)
+
+        binding.addButton.text = "Update"
     }
 
     private fun setOnClickListeners() {
@@ -97,67 +167,131 @@ class AddNewFavouritePlace : AppCompatActivity() {
 
         binding.addButton.setOnClickListener {
             val favouritePlaceDao = (application as FavouritePlaceApp).db.favouritePlaceDao()
-            addDetailsToDataBase(favouritePlaceDao)
+            val favourPlaceDetailId = favouritePlacesDetails!!.id
+            addDetailsToDataBase(favouritePlaceDao, favourPlaceDetailId)
+        }
+
+        binding.textFieldLocation.setOnClickListener {
+            try {
+                val fields = listOf(
+                    Place.Field.ID,
+                    Place.Field.NAME,
+                    Place.Field.LAT_LNG,
+                    Place.Field.ADDRESS
+                )
+                val intent = Autocomplete.IntentBuilder(AutocompleteActivityMode.FULLSCREEN, fields)
+                    .build(this@AddNewFavouritePlace)
+                placeAutoCompleteResultLauncher.launch(intent)
+            } catch (e: Exception) {
+                e.printStackTrace()
+            }
         }
     }
 
-    private fun addDetailsToDataBase(favouritePlaceDao: FavouritePlaceDao) {
-        val title = binding.textFieldTitle.text.toString()
-        val description = binding.textFieldDescription.text.toString()
-        val date = binding.textFieldDate.text.toString()
-        val location = binding.textFieldLocation.text.toString()
-        val image = saveImageToInternalStorage.toString()
+    private fun addDetailsToDataBase(favouritePlaceDao: FavouritePlaceDao, id: Int) {
+        if (favouritePlacesDetails == null) {
+            val title = binding.textFieldTitle.text.toString()
+            val description = binding.textFieldDescription.text.toString()
+            val date = binding.textFieldDate.text.toString()
+            val location = binding.textFieldLocation.text.toString()
+            val image = saveImageToInternalStorage.toString()
 
-        when {
-            binding.textFieldTitle.text.isNullOrEmpty() -> {
-                Toast.makeText(this@AddNewFavouritePlace, "Please add a title", Toast.LENGTH_LONG)
-                    .show()
+            when {
+                binding.textFieldTitle.text.isNullOrEmpty() -> {
+                    Toast.makeText(
+                        this@AddNewFavouritePlace,
+                        "Please add a title",
+                        Toast.LENGTH_LONG
+                    )
+                        .show()
+                }
+                binding.textFieldDescription.text.isNullOrEmpty() -> {
+                    Toast.makeText(
+                        this@AddNewFavouritePlace,
+                        "Please add a description",
+                        Toast.LENGTH_LONG
+                    )
+                        .show()
+                }
+                binding.textFieldLocation.text.isNullOrEmpty() -> {
+                    Toast.makeText(
+                        this@AddNewFavouritePlace,
+                        "Please add a location",
+                        Toast.LENGTH_LONG
+                    )
+                        .show()
+                }
+                saveImageToInternalStorage == null -> {
+                    Toast.makeText(
+                        this@AddNewFavouritePlace,
+                        "Please select an image",
+                        Toast.LENGTH_LONG
+                    )
+                        .show()
+                }
+                else -> {
+                    lifecycleScope.launch {
+                        favouritePlaceDao.insert(
+                            FavouritePlaceEntity(
+                                image = image,
+                                title = title,
+                                description = description,
+                                date = date,
+                                location = location,
+                                longitude = mLongitude,
+                                latitude = mLatitude
+                            )
+                        )
+                    }
+
+                    Toast.makeText(this@AddNewFavouritePlace, "Details saved", Toast.LENGTH_LONG)
+                        .show()
+                    binding.textFieldTitle.text?.clear()
+                    binding.textFieldDescription.text?.clear()
+                    binding.textFieldLocation.text?.clear()
+                    binding.textFieldDate.text?.clear()
+                    val intent = Intent(this@AddNewFavouritePlace, MainActivity::class.java)
+                    startActivity(intent)
+                }
             }
-            binding.textFieldDescription.text.isNullOrEmpty() -> {
-                Toast.makeText(
-                    this@AddNewFavouritePlace,
-                    "Please add a description",
-                    Toast.LENGTH_LONG
-                )
-                    .show()
-            }
-            binding.textFieldLocation.text.isNullOrEmpty() -> {
-                Toast.makeText(
-                    this@AddNewFavouritePlace,
-                    "Please add a location",
-                    Toast.LENGTH_LONG
-                )
-                    .show()
-            }
-            saveImageToInternalStorage == null -> {
-                Toast.makeText(
-                    this@AddNewFavouritePlace,
-                    "Please select an image",
-                    Toast.LENGTH_LONG
-                )
-                    .show()
-            }
-            else -> {
+        } else {
+            val updateTitle = binding.textFieldTitle.text.toString()
+            val updateDescription = binding.textFieldDescription.text.toString()
+            val updateDate = binding.textFieldDate.text.toString()
+            val updateLocation = binding.textFieldLocation.text.toString()
+            val updateImage = saveImageToInternalStorage.toString()
+
+            if (updateTitle.isNotEmpty() && updateDescription.isNotEmpty() && updateDate.isNotEmpty()
+                && updateLocation.isNotEmpty() && updateImage.isNotEmpty()
+            ) {
                 lifecycleScope.launch {
-                    favouritePlaceDao.insert(
+                    favouritePlaceDao.update(
                         FavouritePlaceEntity(
-                            image = image,
-                            title = title,
-                            description = description,
-                            date = date,
-                            location = location,
-                            longitude = mLongitude,
-                            latitude = mLatitude
+                            id = id,
+                            image = updateImage,
+                            title = updateTitle,
+                            description = updateDescription,
+                            location = updateLocation,
+                            date = updateDate,
+                            longitude = 0.0,
+                            latitude = 0.0
                         )
                     )
                 }
-                Toast.makeText(this@AddNewFavouritePlace, "Details saved", Toast.LENGTH_LONG).show()
+                Toast.makeText(this@AddNewFavouritePlace, "Details Updated!", Toast.LENGTH_LONG)
+                    .show()
                 binding.textFieldTitle.text?.clear()
                 binding.textFieldDescription.text?.clear()
                 binding.textFieldLocation.text?.clear()
                 binding.textFieldDate.text?.clear()
                 val intent = Intent(this@AddNewFavouritePlace, MainActivity::class.java)
                 startActivity(intent)
+            } else {
+                Toast.makeText(
+                    this@AddNewFavouritePlace,
+                    "Please input a valid text!",
+                    Toast.LENGTH_LONG
+                ).show()
             }
         }
     }
