@@ -167,8 +167,8 @@ class AddNewFavouritePlace : AppCompatActivity() {
 
         binding.addButton.setOnClickListener {
             val favouritePlaceDao = (application as FavouritePlaceApp).db.favouritePlaceDao()
-            val favourPlaceDetailId = favouritePlacesDetails!!.id
-            addDetailsToDataBase(favouritePlaceDao, favourPlaceDetailId)
+            // val favourPlaceDetailId = favouritePlacesDetails!!.id
+            addDetailsToDataBase(favouritePlaceDao)
         }
 
         binding.textFieldLocation.setOnClickListener {
@@ -188,7 +188,7 @@ class AddNewFavouritePlace : AppCompatActivity() {
         }
     }
 
-    private fun addDetailsToDataBase(favouritePlaceDao: FavouritePlaceDao, id: Int) {
+    private fun addDetailsToDataBase(favouritePlaceDao: FavouritePlaceDao) {
         if (favouritePlacesDetails == null) {
             val title = binding.textFieldTitle.text.toString()
             val description = binding.textFieldDescription.text.toString()
@@ -267,7 +267,7 @@ class AddNewFavouritePlace : AppCompatActivity() {
                 lifecycleScope.launch {
                     favouritePlaceDao.update(
                         FavouritePlaceEntity(
-                            id = id,
+                            //id = id,
                             image = updateImage,
                             title = updateTitle,
                             description = updateDescription,
