@@ -4,7 +4,7 @@
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="@color/cream"
+    android:background="@color/grey2"
     tools:context=".activities.MainActivity">
 
     <ScrollView
@@ -27,7 +27,7 @@
         android:layout_marginTop="300dp"
         android:gravity="center"
         android:text="No place is available!!"
-        android:textColor="@color/grey"
+        android:textColor="@color/black"
         android:textSize="18sp"
         android:visibility="visible" />
 

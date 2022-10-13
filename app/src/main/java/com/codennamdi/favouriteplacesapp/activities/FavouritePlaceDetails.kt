@@ -1,7 +1,7 @@
 package com.codennamdi.favouriteplacesapp.activities
 
+import android.content.Intent
 import android.os.Bundle
-import android.os.Parcelable
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.net.toUri
 import com.codennamdi.favouriteplacesapp.R
@@ -36,6 +36,15 @@ class FavouritePlaceDetails : AppCompatActivity() {
             binding.imageViewPlaceImage.setImageURI(favouritePlaceEntityItems.image.toUri())
             binding.textViewTitle.text = favouritePlaceEntityItems.title
             binding.textViewDescription.text = favouritePlaceEntityItems.description
+
+            binding.viewOnMapButton.setOnClickListener {
+                val intent = Intent(this@FavouritePlaceDetails, MapActivity::class.java)
+                intent.putExtra(
+                    MainActivity.EXTRA_FAVOURITE_PLACE_DETAILS,
+                    favouritePlaceEntityItems
+                )
+                startActivity(intent)
+            }
         }
     }
 }
