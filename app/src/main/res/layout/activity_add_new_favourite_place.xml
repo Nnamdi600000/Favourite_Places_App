@@ -28,8 +28,8 @@
 
             <de.hdodenhof.circleimageview.CircleImageView
                 android:id="@+id/place_image"
-                android:layout_width="250dp"
-                android:layout_height="250dp"
+                android:layout_width="150dp"
+                android:layout_height="150dp"
                 android:layout_gravity="center"
                 android:contentDescription="@string/image_of_place"
                 android:src="@drawable/ic_image_24"
@@ -41,14 +41,14 @@
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:layout_margin="10dp"
-                android:text="Add Image"
-                android:textSize="12sp" />
+                android:text="@string/add_image"
+                android:textSize="10sp" />
 
             <com.google.android.material.textfield.TextInputLayout
                 style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:hint="Title"
+                android:hint="@string/title"
                 android:padding="10dp">
 
                 <com.google.android.material.textfield.TextInputEditText
@@ -95,7 +95,7 @@
                 style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:hint="Location"
+                android:hint="@string/location"
                 android:padding="10dp">
 
                 <com.google.android.material.textfield.TextInputEditText
@@ -109,12 +109,20 @@
             </com.google.android.material.textfield.TextInputLayout>
 
             <Button
+                android:id="@+id/set_current_location"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_margin="10dp"
+                android:background="@drawable/custom_curved_button_background"
+                android:text="@string/select_current_location" />
+
+            <Button
                 android:id="@+id/add_button"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_margin="30dp"
+                android:layout_margin="10dp"
                 android:background="@drawable/custom_curved_button_background"
-                android:text="Add" />
+                android:text="@string/add" />
         </LinearLayout>
 
     </ScrollView>

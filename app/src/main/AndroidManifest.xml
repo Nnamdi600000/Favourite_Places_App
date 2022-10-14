@@ -6,6 +6,8 @@
     <uses-permission android:name="android.permission.CAMERA" />
     <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE" />
     <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" />
+    <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />
+    <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />
 
     <application
         android:name=".database.FavouritePlaceApp"
@@ -21,7 +23,7 @@
             android:name=".activities.MapActivity"
             android:exported="false"
             android:screenOrientation="portrait"
-            android:theme="@style/Theme.CustomThemeFavouritePlacesDetails" >
+            android:theme="@style/Theme.CustomThemeFavouritePlacesDetails">
             <meta-data
                 android:name="android.app.lib_name"
                 android:value="" />

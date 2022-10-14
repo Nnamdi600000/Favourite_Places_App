@@ -1,6 +1,7 @@
 package com.codennamdi.favouriteplacesapp.activities
 
 import android.Manifest
+import android.annotation.SuppressLint
 import android.app.Activity
 import android.app.DatePickerDialog
 import android.content.ActivityNotFoundException
@@ -10,8 +11,11 @@ import android.content.ContextWrapper
 import android.content.Intent
 import android.graphics.Bitmap
 import android.graphics.drawable.BitmapDrawable
+import android.location.Location
+import android.location.LocationManager
 import android.net.Uri
 import android.os.Bundle
+import android.os.Looper
 import android.provider.MediaStore
 import android.provider.Settings
 import android.util.Log
@@ -27,11 +31,16 @@ import com.codennamdi.favouriteplacesapp.database.FavouritePlaceApp
 import com.codennamdi.favouriteplacesapp.database.FavouritePlaceDao
 import com.codennamdi.favouriteplacesapp.database.FavouritePlaceEntity
 import com.codennamdi.favouriteplacesapp.databinding.ActivityAddNewFavouritePlaceBinding
+import com.google.android.gms.location.FusedLocationProviderClient
+import com.google.android.gms.location.LocationCallback
+import com.google.android.gms.location.LocationResult
+import com.google.android.gms.location.LocationServices
 import com.google.android.libraries.places.api.Places
 import com.google.android.libraries.places.api.model.Place
 import com.google.android.libraries.places.widget.Autocomplete
 import com.google.android.libraries.places.widget.AutocompleteActivity
 import com.google.android.libraries.places.widget.model.AutocompleteActivityMode
+import com.google.android.material.snackbar.Snackbar
 import com.karumi.dexter.Dexter
 import com.karumi.dexter.MultiplePermissionsReport
 import com.karumi.dexter.PermissionToken
@@ -53,6 +62,7 @@ class AddNewFavouritePlace : AppCompatActivity() {
     private var mLongitude: Double = 0.0
     private var mLatitude: Double = 0.0
     private var favouritePlacesDetails: FavouritePlaceEntity? = null
+    private lateinit var mFusedClientLocation: FusedLocationProviderClient
 
     private val openGalleryLauncher: ActivityResultLauncher<Intent> =
         registerForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
@@ -110,13 +120,14 @@ class AddNewFavouritePlace : AppCompatActivity() {
 
     companion object {
         private const val IMAGE_DIRECTORY = "FavouritePlacesImages"
-        private const val PLACE_AUTO_COMPLETE_REQUEST_CODE = 3
     }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         binding = ActivityAddNewFavouritePlaceBinding.inflate(layoutInflater)
         setContentView(binding.root)
+
+        mFusedClientLocation = LocationServices.getFusedLocationProviderClient(this)
 
         setSupportActionBar(binding.addFavouritePlaceToolbar)
         title = "Add Favourite Place"
@@ -185,6 +196,10 @@ class AddNewFavouritePlace : AppCompatActivity() {
             } catch (e: Exception) {
                 e.printStackTrace()
             }
+        }
+
+        binding.setCurrentLocation.setOnClickListener {
+            getUserLocationPermission()
         }
     }
 
@@ -360,6 +375,82 @@ class AddNewFavouritePlace : AppCompatActivity() {
                     displayRationalDialog()
                 }
             }).onSameThread().check()
+    }
+
+    private fun getUserLocationPermission() {
+        if (!isLocationEnabled()) {
+            Snackbar.make(
+                findViewById(android.R.id.content),
+                "Please enable your location provider, it is turned off.",
+                Snackbar.LENGTH_LONG
+            ).show()
+            val intent = Intent(Settings.ACTION_LOCATION_SOURCE_SETTINGS)
+            startActivity(intent)
+        } else {
+            Dexter.withContext(this@AddNewFavouritePlace)
+                .withPermissions(
+                    Manifest.permission.ACCESS_FINE_LOCATION,
+                    Manifest.permission.ACCESS_COARSE_LOCATION
+                ).withListener(object : MultiplePermissionsListener {
+                    override fun onPermissionsChecked(report: MultiplePermissionsReport?) {
+                        if (report!!.areAllPermissionsGranted()) {
+                            requestClientLocationData()
+                        }
+
+                        if (report.isAnyPermissionPermanentlyDenied) {
+                            Toast.makeText(
+                                this@AddNewFavouritePlace,
+                                "Please grant all permissions, if not the app won't work.",
+                                Toast.LENGTH_LONG
+                            ).show()
+                        }
+                    }
+
+                    override fun onPermissionRationaleShouldBeShown(
+                        permissions: MutableList<PermissionRequest>,
+                        token: PermissionToken
+                    ) {
+                        displayRationalDialog()
+                    }
+                }).onSameThread().check()
+        }
+    }
+
+    //This function gets the location of the user.
+    @SuppressLint("MissingPermission")
+    private fun requestClientLocationData() {
+        val mLocationRequest = com.google.android.gms.location.LocationRequest()
+        mLocationRequest.priority =
+            com.google.android.gms.location.LocationRequest.PRIORITY_HIGH_ACCURACY
+        mLocationRequest.interval = 1000
+        mLocationRequest.numUpdates = 1
+
+        mFusedClientLocation.requestLocationUpdates(
+            mLocationRequest, mLocationCallback,
+            Looper.myLooper()
+        )
+    }
+
+    //Here we are getting the users current location.
+    private val mLocationCallback = object : LocationCallback() {
+        override fun onLocationResult(locationResult: LocationResult) {
+            val mLastLocation: Location? = locationResult.lastLocation
+
+            val latitude = mLastLocation?.latitude
+            Log.i("Current Latitude", "$latitude")
+
+            val longitude = mLastLocation?.longitude
+            Log.i("Current Longitude", "$longitude")
+        }
+    }
+
+    private fun isLocationEnabled(): Boolean {
+        //This provide access to the system location service.
+        val locationManager: LocationManager =
+            getSystemService(Context.LOCATION_SERVICE) as LocationManager
+        return locationManager.isProviderEnabled(LocationManager.GPS_PROVIDER) || locationManager.isProviderEnabled(
+            LocationManager.NETWORK_PROVIDER
+        )
     }
 
     private fun displayRationalDialog() {

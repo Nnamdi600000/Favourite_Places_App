@@ -4,4 +4,9 @@
     <string name="place_title">Place Title</string>
     <string name="update">Update</string>
     <string name="places_api_key">AIzaSyCPOrmqwilVGiPOhlqabQBJjKuyqn9h08Q</string>
+    <string name="select_current_location">Select Current Location</string>
+    <string name="add">Add</string>
+    <string name="add_image">Add Image</string>
+    <string name="title">Title</string>
+    <string name="location">Location</string>
 </resources>
