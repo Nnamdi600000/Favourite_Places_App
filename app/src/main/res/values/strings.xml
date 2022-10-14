@@ -9,4 +9,8 @@
     <string name="add_image">Add Image</string>
     <string name="title">Title</string>
     <string name="location">Location</string>
+    <string name="lorem_ipsum_is_simply_dummy_text_of_the_printing_and_typesetting_industry">Lorem Ipsum is simply dummy text of the printing and typesetting industry. Lorem Ipsum is simply dummy text of the printing and typesetting industry.</string>
+    <string name="title_">Title</string>
+    <string name="description">Description</string>
+    <string name="date">Date</string>
 </resources>

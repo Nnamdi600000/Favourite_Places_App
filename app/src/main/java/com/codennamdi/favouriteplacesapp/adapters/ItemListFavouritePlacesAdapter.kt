@@ -62,7 +62,6 @@ open class ItemListFavouritePlacesAdapter(
                 onClickListener.onClick(position, item)
             }
         }
-
     }
 
     override fun getItemCount(): Int {
