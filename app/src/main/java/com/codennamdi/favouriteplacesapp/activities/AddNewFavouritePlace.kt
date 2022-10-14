@@ -31,6 +31,7 @@ import com.codennamdi.favouriteplacesapp.database.FavouritePlaceApp
 import com.codennamdi.favouriteplacesapp.database.FavouritePlaceDao
 import com.codennamdi.favouriteplacesapp.database.FavouritePlaceEntity
 import com.codennamdi.favouriteplacesapp.databinding.ActivityAddNewFavouritePlaceBinding
+import com.codennamdi.favouriteplacesapp.utils.GetAddressFromLatLng
 import com.google.android.gms.location.FusedLocationProviderClient
 import com.google.android.gms.location.LocationCallback
 import com.google.android.gms.location.LocationResult
@@ -436,11 +437,24 @@ class AddNewFavouritePlace : AppCompatActivity() {
         override fun onLocationResult(locationResult: LocationResult) {
             val mLastLocation: Location? = locationResult.lastLocation
 
-            val latitude = mLastLocation?.latitude
-            Log.i("Current Latitude", "$latitude")
+            val mLatitude = mLastLocation?.latitude
+            Log.i("Current Latitude", "$mLatitude")
 
-            val longitude = mLastLocation?.longitude
-            Log.i("Current Longitude", "$longitude")
+            val mLongitude = mLastLocation?.longitude
+            Log.i("Current Longitude", "$mLongitude")
+
+            val addressTask =
+                GetAddressFromLatLng(this@AddNewFavouritePlace, mLatitude!!, mLongitude!!)
+            addressTask.setAddressListener(object : GetAddressFromLatLng.AddressListener {
+                override fun onAddressFound(address: String?) {
+                    binding.textFieldLocation.setText(address)
+                }
+
+                override fun onError() {
+                    Log.e("Get location: ", "Something went wrong")
+                }
+            })
+            addressTask.getAddress()
         }
     }
 
@@ -474,9 +488,9 @@ class AddNewFavouritePlace : AppCompatActivity() {
 
     private fun datePickerDialog() {
         dateSetOnClickListener =
-            DatePickerDialog.OnDateSetListener { _, year, month, dayOfMonth ->
+            DatePickerDialog.OnDateSetListener { _, year, monthOfYear, dayOfMonth ->
                 calendar.set(Calendar.YEAR, year)
-                calendar.set(Calendar.MONTH, month)
+                calendar.set(Calendar.MONTH, monthOfYear)
                 calendar.set(Calendar.DAY_OF_MONTH, dayOfMonth)
                 formatDate()
             }
@@ -491,7 +505,7 @@ class AddNewFavouritePlace : AppCompatActivity() {
     }
 
     private fun formatDate() {
-        val format = "dd/mm/yyyy"
+        val format = "dd/MM/yyyy"
         val sdf = SimpleDateFormat(format, Locale.getDefault())
         binding.textFieldDate.setText(sdf.format(calendar.time).toString())
     }
